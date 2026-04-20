@@ -1,0 +1,5 @@
+Server running at http://0.0.0.0:3000/
+Open this URL in your browser
+REQUEST: POST /api/ai-enhance
+百度 Token 获取成功，有效期至: 2026-05-17T15:16:48.825Z
+Baidu API response: {"log_id":2045159552550578700,"error_msg":"invalid parameter(s)","error_code":282004}

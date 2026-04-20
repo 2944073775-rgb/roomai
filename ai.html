@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI修图</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fff;
+            color: #000;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        /* Nav */
+        .nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 40px;
+            border: 1px solid #000;
+            border-radius: 8px;
+            overflow: hidden;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .nav a {
+            padding: 12px 32px;
+            text-decoration: none;
+            color: #000;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .nav a:last-child {
+            background: #000;
+            color: #fff;
+        }
+        
+        .nav a:hover:not(.active) {
+            background: #f5f5f5;
+        }
+        
+        /* Upload */
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 24px;
+        }
+        
+        .upload-area:hover {
+            border-color: #000;
+            background: #fafafa;
+        }
+        
+        .upload-icon { font-size: 40px; margin-bottom: 12px; }
+        .upload-text { font-size: 15px; margin-bottom: 4px; }
+        .upload-hint { color: #999; font-size: 13px; }
+        
+        /* Grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .image-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .image-item.selected {
+            outline: 2px solid #000;
+            outline-offset: 2px;
+        }
+        
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-item .remove {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0,0,0,0.6);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .image-item:hover .remove { opacity: 1; }
+        
+        .image-item .check {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 20px;
+            height: 20px;
+            background: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .image-item.selected .check { opacity: 1; }
+        
+        .add-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px dashed #ddd;
+        }
+        
+        .add-btn:hover {
+            background: #000;
+            color: #fff;
+            border-color: #000;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        .upload-area:hover {
+            border-color: #000;
+            background: #fafafa;
+        }
+        
+        .upload-text { font-size: 14px; margin-bottom: 4px; }
+        .upload-hint { color: #999; font-size: 12px; }
+        
+        /* Prompt */
+        .prompt-box {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .prompt-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .prompt-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            min-height: 80px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .prompt-input:focus {
+            border-color: #000;
+        }
+        
+        .prompt-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+        
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            border-color: #000;
+            background: #fafafa;
+        }
+        
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .btn.primary {
+            background: #000;
+            color: #fff;
+            border-color: #000;
+        }
+        
+        .btn.primary:hover:not(:disabled) {
+            background: #333;
+        }
+        
+        /* QR */
+        .qr-section {
+            text-align: center;
+            padding: 32px;
+            background: #fafafa;
+            border-radius: 12px;
+        }
+        
+        #qrcode {
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        
+        .qr-hint {
+            font-size: 13px;
+            color: #888;
+        }
+        
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid #eee;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 500;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+        
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .overlay-box {
+            background: #fff;
+            padding: 40px 48px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #ddd;
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .overlay-text { font-size: 14px; color: #666; }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #000;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        .hidden { display: none; }
+        
+        /* Mobile */
+        @media (max-width: 600px) {
+            .container { padding: 24px 16px; }
+            .image-grid { grid-template-columns: repeat(3, 1fr); }
+            .btn-row { flex-direction: column; }
+            .stats { gap: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI修图</h1>
+            <p class="subtitle">智能消除 · 局部修改</p>
+        </header>
+        
+        <nav class="nav">
+            <a href="/">基础美化</a>
+            <a href="/ai.html">AI修图</a>
+        </nav>
+        
+        <input type="file" id="fileInput" multiple accept="image/jpeg,image/png" style="display:none">
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-text">点击选择图片，或拖拽到这里</div>
+            <div class="upload-hint">JPG/PNG · 最多15张</div>
+        </div>
+        
+        <div class="image-grid" id="imageGrid"></div>
+        
+        <div class="prompt-box">
+            <div class="prompt-label">描述你想要的效果</div>
+            <textarea class="prompt-input" id="promptInput" placeholder="例如：去掉背景中的杂物、移除水印、让天空更蓝..."></textarea>
+            <div class="prompt-hint">点击上方图片选择要修图的图片，然后输入指令</div>
+        </div>
+        
+        <div class="btn-row">
+            <button class="btn" id="clearBtn" disabled>清空</button>
+            <button class="btn primary" id="aiBtn" disabled>开始AI修图</button>
+            <button class="btn" id="downloadBtn" disabled>下载</button>
+        </div>
+        
+        <div class="qr-section">
+            <div id="qrcode"></div>
+            <div class="qr-hint">手机扫码上传</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">已上传</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="processedCount">0</div>
+                <div class="stat-label">已修图</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="processingOverlay">
+        <div class="overlay-box">
+            <div class="spinner"></div>
+            <div class="overlay-text" id="processingText">AI处理中...</div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script>
+        const MAX = 15;
+        let images = [];
+        let selectedIdx = -1;
+        let pollInterval = null;
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imageGrid = document.getElementById('imageGrid');
+        const aiBtn = document.getElementById('aiBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const promptInput = document.getElementById('promptInput');
+        const overlay = document.getElementById('processingOverlay');
+        const processingText = document.getElementById('processingText');
+        const toast = document.getElementById('toast');
+        const totalCount = document.getElementById('totalCount');
+        const processedCount = document.getElementById('processedCount');
+        
+        function getServerUrl() { return window.location.origin; }
+        
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // QR
+        function initQR() {
+            const url = getServerUrl() + '/?mode=upload';
+            new QRCode(document.getElementById('qrcode'), { text: url, width: 140, height: 140 });
+        }
+        
+        // Polling
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(() => {
+                fetch(getServerUrl() + '/api/images')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.images) {
+                            data.images.forEach(img => {
+                                if (!images.find(i => i.id === img.id)) {
+                                    const i = new Image();
+                                    i.onload = () => {
+                                        const c = document.createElement('canvas');
+                                        c.width = i.width; c.height = i.height;
+                                        c.getContext('2d').drawImage(i, 0, 0);
+                                        images.push({ id: img.id, original: c.toDataURL('image/jpeg', 0.92), processed: null, name: img.name });
+                                        updateUI();
+                                        showToast('收到新图片');
+                                    };
+                                    i.src = img.original;
+                                }
+                            });
+                        }
+                    }).catch(() => {});
+            }, 2000);
+        }
+        
+        // Mobile mode
+        if (location.search.includes('mode=upload')) {
+            document.querySelector('.nav').style.display = 'none';
+            document.querySelector('h1').textContent = '上传图片';
+            document.querySelector('.subtitle').textContent = '';
+            document.querySelector('.qr-section').style.display = 'none';
+            document.querySelector('.stats').style.display = 'none';
+            document.getElementById('promptInput').style.display = 'none';
+            document.querySelector('.prompt-hint').textContent = '';
+            document.querySelector('.prompt-label').textContent = '';
+            document.getElementById('addBtn').style.fontSize = '48px';
+        }
+        
+        // Upload
+        uploadArea.onclick = () => fileInput.click();
+        uploadArea.ondragover = e => { e.preventDefault(); uploadArea.style.borderColor = '#000'; };
+        uploadArea.ondragleave = () => { uploadArea.style.borderColor = '#ddd'; };
+        uploadArea.ondrop = e => { e.preventDefault(); uploadArea.style.borderColor = '#ddd'; handleFiles(e.dataTransfer.files); };
+        fileInput.onchange = () => { handleFiles(fileInput.files); fileInput.value = ''; };
+        
+        function handleFiles(files) {
+            for (const f of files) {
+                if (images.length >= MAX) break;
+                if (!f.type.match(/image/)) continue;
+                const r = new FileReader();
+                r.onload = e => {
+                    const i = new Image();
+                    i.onload = () => {
+                        const c = document.createElement('canvas');
+                        c.width = i.width; c.height = i.height;
+                        c.getContext('2d').drawImage(i, 0, 0);
+                        images.push({ id: Date.now() + Math.random(), original: c.toDataURL('image/jpeg', 0.92), processed: null, name: f.name });
+                        updateUI();
+                    };
+                    i.src = e.target.result;
+                };
+                r.readAsDataURL(f);
+            }
+        }
+        
+        // Update UI
+        function updateUI() {
+            imageGrid.innerHTML = '';
+            images.forEach((img, idx) => {
+                const div = document.createElement('div');
+                div.className = 'image-item' + (idx === selectedIdx ? ' selected' : '');
+                div.innerHTML = `
+                    <img src="${img.processed || img.original}" alt="">
+                    <span class="check">✓</span>
+                    ${img.processed ? '' : '<button class="remove">×</button>'}
+                `;
+                div.onclick = () => {
+                    if (img.processed) return;
+                    selectedIdx = idx;
+                    updateUI();
+                };
+                div.querySelector('.remove')?.addEventListener('click', e => {
+                    e.stopPropagation();
+                    images.splice(idx, 1);
+                    if (selectedIdx === idx) selectedIdx = -1;
+                    else if (selectedIdx > idx) selectedIdx--;
+                    updateUI();
+                });
+                imageGrid.appendChild(div);
+            });
+            
+            const hasSelection = selectedIdx >= 0 && selectedIdx < images.length && !images[selectedIdx].processed;
+            const hasPrompt = promptInput.value.trim().length > 0;
+            aiBtn.disabled = !hasSelection || !hasPrompt;
+            
+            clearBtn.disabled = images.length === 0;
+            downloadBtn.disabled = !images.some(i => i.processed);
+            
+            totalCount.textContent = images.length;
+            processedCount.textContent = images.filter(i => i.processed).length;
+        }
+        
+        // AI Process
+        aiBtn.onclick = async () => {
+            if (selectedIdx < 0 || !promptInput.value.trim()) return;
+            
+            overlay.classList.add('show');
+            processingText.textContent = 'AI修图中...';
+            
+            try {
+                const resp = await fetch(getServerUrl() + '/api/ai-enhance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: images[selectedIdx].original,
+                        prompt: promptInput.value.trim()
+                    })
+                });
+                const data = await resp.json();
+                if (data.result) {
+                    images[selectedIdx].processed = data.result;
+                    selectedIdx = -1;
+                    updateUI();
+                    showToast('修图完成');
+                } else {
+                    showToast(data.error || '修图失败');
+                }
+            } catch(e) {
+                showToast('修图失败');
+            }
+            
+            overlay.classList.remove('show');
+        };
+        
+        // Download
+        downloadBtn.onclick = async () => {
+            const pro = images.filter(i => i.processed);
+            if (pro.length === 1) {
+                const a = document.createElement('a');
+                a.href = pro[0].processed;
+                a.download = 'AI修图_' + (pro[0].name || 'image.jpg');
+                a.click();
+            } else {
+                const zip = new JSZip();
+                pro.forEach((img, i) => zip.file(`AI修图_${i+1}.jpg`, img.processed.split(',')[1], {base64: true}));
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'AI修图.zip';
+                a.click();
+            }
+        };
+        
+        // Clear
+        clearBtn.onclick = () => { images = images.filter(i => i.fromMobile); selectedIdx = -1; updateUI(); };
+        
+        // Prompt input
+        promptInput.oninput = () => {
+            const hasPrompt = promptInput.value.trim().length > 0;
+            const hasSelection = selectedIdx >= 0 && selectedIdx < images.length && !images[selectedIdx].processed;
+            aiBtn.disabled = !(hasSelection && hasPrompt);
+        };
+        
+        if (!location.search.includes('mode=upload')) {
+            initQR();
+            startPolling();
+        }
+        
+        updateUI();
+    </script>
+</body>
+</html>

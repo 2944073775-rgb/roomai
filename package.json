@@ -1,0 +1,13 @@
+{
+  "name": "roomai",
+  "version": "1.0.0",
+  "description": "房源图片美化工具",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "jimp": "^1.6.1",
+    "qrcode": "^1.5.4"
+  }
+}

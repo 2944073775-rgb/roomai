@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片工具</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fff;
+            color: #000;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        /* Nav */
+        .nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 32px;
+            border: 1px solid #000;
+            border-radius: 8px;
+            overflow: hidden;
+            width: fit-content;
+            margin: 0 auto 32px;
+        }
+        
+        .nav a {
+            padding: 12px 32px;
+            text-decoration: none;
+            color: #000;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .nav a:first-child.active {
+            background: #000;
+            color: #fff;
+        }
+        
+        .nav a:last-child.active {
+            background: #000;
+            color: #fff;
+        }
+        
+        .nav a:hover:not(.active) {
+            background: #f5f5f5;
+        }
+        
+        /* Upload */
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        .upload-area:hover {
+            border-color: #000;
+            background: #fafafa;
+        }
+        
+        .upload-text { font-size: 14px; margin-bottom: 4px; }
+        .upload-hint { color: #999; font-size: 12px; }
+        
+        /* Grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .image-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+        
+        .image-item.selected {
+            outline: 2px solid #000;
+            outline-offset: 2px;
+        }
+        
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-item .remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 22px;
+            height: 22px;
+            background: rgba(0,0,0,0.6);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .image-item:hover .remove { opacity: 1; }
+        
+        .image-item .check {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 18px;
+            height: 18px;
+            background: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            opacity: 0;
+        }
+        
+        .image-item.selected .check { opacity: 1; }
+        
+        .image-item .badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: #000;
+            color: #fff;
+            font-size: 9px;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            border-color: #000;
+            background: #fafafa;
+        }
+        
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .btn.primary {
+            background: #000;
+            color: #fff;
+            border-color: #000;
+        }
+        
+        .btn.primary:hover:not(:disabled) {
+            background: #333;
+        }
+        
+        /* Params */
+        .params {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .params-title {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .param-row:last-child { margin-bottom: 0; }
+        
+        .param-label {
+            width: 50px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .param-value {
+            width: 36px;
+            font-size: 13px;
+            text-align: right;
+        }
+        
+        .param-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        /* Prompt */
+        .prompt-box {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .prompt-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .prompt-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            min-height: 70px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .prompt-input:focus {
+            border-color: #000;
+        }
+        
+        /* QR */
+        .qr-section {
+            text-align: center;
+            padding: 32px;
+            background: #fafafa;
+            border-radius: 12px;
+        }
+        
+        #qrcode { background: #fff; padding: 16px; border-radius: 8px; display: inline-block; margin-bottom: 12px; }
+        .qr-hint { font-size: 13px; color: #888; }
+        
+        /* Text Gen Page */
+        .text-gen-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+        
+        .text-gen-header {
+            font-size: 24px;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .text-gen-desc {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        
+        .text-gen-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .text-gen-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .text-select {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            background: #fff;
+            cursor: pointer;
+        }
+        
+        .text-select:focus { border-color: #000; }
+        
+        .text-input {
+            padding: 14px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .text-input:focus { border-color: #000; }
+        
+        .text-result {
+            padding: 20px;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+        }
+        
+        .text-result.hidden { display: none; }
+        
+        .result-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+            box-sizing: border-box;
+        }
+        
+        .result-textarea:focus { border-color: #000; }
+        
+        .copy-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: 1px solid #000;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .copy-btn:hover { background: #000; color: #fff; }
+        .copy-btn.copied { background: #000; color: #fff; }
+        
+        .text-copy-hint {
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+            margin-top: 12px;
+        }
+        
+        .text-copy-hint.hidden { display: none; }
+            text-align: center;
+            padding: 24px;
+            background: #fafafa;
+            border-radius: 12px;
+        }
+        
+        #qrcode {
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .qr-hint {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #eee;
+        }
+        
+        .stat-item { text-align: center; }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 500;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+        
+        /* Page sections */
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+        
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .overlay-box {
+            background: #fff;
+            padding: 32px 40px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #ddd;
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .overlay-text { font-size: 14px; color: #666; }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #000;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        /* Mobile */
+        @media (max-width: 600px) {
+            .container { padding: 24px 16px; }
+            .image-grid { grid-template-columns: repeat(3, 1fr); }
+            .btn-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图片工具</h1>
+            <p class="subtitle">批量美化 · AI修图</p>
+        </header>
+        
+        <nav class="nav">
+            <a href="#" class="active" onclick="showPage('basic')">基础美化</a>
+            <a href="#" onclick="showPage('ai')">AI修图</a>
+            <a href="#" onclick="showPage('text')">AI文案</a>
+        </nav>
+        
+        <input type="file" id="fileInput" multiple accept="image/jpeg,image/png" style="display:none">
+        
+        <!-- 基础美化页面 -->
+        <div class="page active" id="pageBasic">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-text">点击选择图片，或拖拽到这里</div>
+                <div class="upload-hint">JPG/PNG · 最多15张</div>
+            </div>
+            
+            <div class="image-grid" id="imageGridBasic"></div>
+            
+            <div class="btn-row">
+                <button class="btn" id="clearBtn" disabled>清空</button>
+                <button class="btn primary" id="enhanceBtn" disabled>开始美化</button>
+                <button class="btn" id="downloadBtn" disabled>下载</button>
+            </div>
+            
+            <div class="params">
+                <div class="params-title">美化参数</div>
+                <div class="param-row">
+                    <span class="param-label">亮度</span>
+                    <input type="range" class="param-slider" id="brightness" min="1" max="2" step="0.05" value="1.15">
+                    <span class="param-value" id="brightnessVal">1.15</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">对比度</span>
+                    <input type="range" class="param-slider" id="contrast" min="1" max="1.5" step="0.05" value="1.1">
+                    <span class="param-value" id="contrastVal">1.10</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">饱和度</span>
+                    <input type="range" class="param-slider" id="saturation" min="1" max="1.5" step="0.05" value="1.1">
+                    <span class="param-value" id="saturationVal">1.10</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">锐化</span>
+                    <input type="range" class="param-slider" id="sharpen" min="0" max="1" step="0.1" value="0.6">
+                    <span class="param-value" id="sharpenVal">0.6</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">降噪</span>
+                    <input type="range" class="param-slider" id="denoise" min="0" max="1" step="0.1" value="0.3">
+                    <span class="param-value" id="denoiseVal">0.3</span>
+                </div>
+            </div>
+            
+            <div class="qr-section">
+                <div id="qrcode"></div>
+                <div class="qr-hint">手机扫码上传</div>
+            </div>
+        </div>
+        
+        <!-- AI修图页面 -->
+        <div class="page" id="pageAi">
+            <div class="upload-area" id="uploadAreaAi">
+                <div class="upload-text">点击选择图片，或拖拽到这里</div>
+                <div class="upload-hint">JPG/PNG · 最多15张</div>
+            </div>
+            
+            <div class="image-grid" id="imageGridAi"></div>
+            
+            <div class="prompt-box">
+                <div class="prompt-label">描述你想要的效果</div>
+                <textarea class="prompt-input" id="promptInput" placeholder="例如：去掉背景中的杂物、移除水印、让天空更蓝..."></textarea>
+            </div>
+            
+            <div class="btn-row">
+                <button class="btn" id="clearBtnAi" disabled>清空</button>
+                <button class="btn primary" id="aiBtn" disabled>开始AI修图</button>
+                <button class="btn" id="downloadBtnAi" disabled>下载</button>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">已上传</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="processedCount">0</div>
+                    <div class="stat-label">已修图</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="processingOverlay">
+        <div class="overlay-box">
+            <div class="spinner"></div>
+            <div class="overlay-text" id="processingText">处理中...</div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script>
+        const MAX = 15;
+        let images = [];
+        let selectedIdx = -1;
+        let pollInterval = null;
+        
+        // Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadAreaAi = document.getElementById('uploadAreaAi');
+        const fileInput = document.getElementById('fileInput');
+        const imageGridBasic = document.getElementById('imageGridBasic');
+        const imageGridAi = document.getElementById('imageGridAi');
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const aiBtn = document.getElementById('aiBtn');
+        const downloadBtnAi = document.getElementById('downloadBtnAi');
+        const clearBtnAi = document.getElementById('clearBtnAi');
+        const promptInput = document.getElementById('promptInput');
+        const overlay = document.getElementById('processingOverlay');
+        const processingText = document.getElementById('processingText');
+        const toast = document.getElementById('toast');
+        const totalCount = document.getElementById('totalCount');
+        const processedCount = document.getElementById('processedCount');
+        
+        // Params
+        let brightness = 1.15, contrast = 1.1, saturation = 1.1, sharpen = 0.6, denoise = 0.3;
+        
+        function bindSlider(id, valId, callback) {
+            const slider = document.getElementById(id);
+            const val = document.getElementById(valId);
+            slider.oninput = () => {
+                const v = parseFloat(slider.value);
+                val.textContent = v.toFixed(2);
+                callback(v);
+            };
+        }
+        
+        bindSlider('brightness', 'brightnessVal', v => brightness = v);
+        bindSlider('contrast', 'contrastVal', v => contrast = v);
+        bindSlider('saturation', 'saturationVal', v => saturation = v);
+        bindSlider('sharpen', 'sharpenVal', v => sharpen = v);
+        bindSlider('denoise', 'denoiseVal', v => denoise = v);
+        
+        function getServerUrl() { return window.location.origin; }
+        
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // Page navigation
+        function showPage(page) {
+            document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            if (page === 'basic') {
+                document.querySelector('.nav a:nth-child(1)').classList.add('active');
+                document.getElementById('pageBasic').classList.add('active');
+            } else if (page === 'ai') {
+                document.querySelector('.nav a:nth-child(2)').classList.add('active');
+                document.getElementById('pageAi').classList.add('active');
+            } else if (page === 'text') {
+                document.querySelector('.nav a:nth-child(3)').classList.add('active');
+                document.getElementById('pageText').classList.add('active');
+            }
+            return false;
+        }
+        
+        // QR
+        function initQR() {
+            const url = getServerUrl() + '/?mode=upload';
+            new QRCode(document.getElementById('qrcode'), { text: url, width: 120, height: 120 });
+        }
+        
+        // Polling
+        let lastServerTime = 0;
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(() => {
+                fetch(getServerUrl() + '/api/images?since=' + lastServerTime)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.images && data.images.length > 0) {
+                            data.images.forEach(img => {
+                                if (!images.find(i => i.id === img.id)) {
+                                    const i = new Image();
+                                    i.onload = () => {
+                                        const c = document.createElement('canvas');
+                                        c.width = i.width; c.height = i.height;
+                                        c.getContext('2d').drawImage(i, 0, 0);
+                                        images.push({ id: img.id, original: c.toDataURL('image/jpeg', 0.92), processed: null, name: img.name });
+                                        updateUI();
+                                        showToast('收到新图片');
+                                    };
+                                    i.src = img.original;
+                                }
+                            });
+                        }
+                        if (data.serverTime) lastServerTime = data.serverTime;
+                    }).catch(() => {});
+            }, 2000);
+        }
+        
+        // Upload
+        uploadArea.onclick = () => fileInput.click();
+        uploadAreaAi.onclick = () => fileInput.click();
+        
+        uploadArea.ondragover = e => { e.preventDefault(); uploadArea.style.borderColor = '#000'; };
+        uploadArea.ondragleave = () => { uploadArea.style.borderColor = '#ddd'; };
+        uploadArea.ondrop = e => { e.preventDefault(); uploadArea.style.borderColor = '#ddd'; handleFiles(e.dataTransfer.files, true); };
+        
+        uploadAreaAi.ondragover = e => { e.preventDefault(); uploadAreaAi.style.borderColor = '#000'; };
+        uploadAreaAi.ondragleave = () => { uploadAreaAi.style.borderColor = '#ddd'; };
+        uploadAreaAi.ondrop = e => { e.preventDefault(); uploadAreaAi.style.borderColor = '#ddd'; handleFiles(e.dataTransfer.files, true); };
+        
+        fileInput.onchange = () => { handleFiles(fileInput.files, true); fileInput.value = ''; };
+        
+        function handleFiles(files, doUpload = false) {
+            for (const f of files) {
+                if (images.length >= MAX) break;
+                if (!f.type.match(/image/)) continue;
+                const r = new FileReader();
+                r.onload = e => {
+                    const i = new Image();
+                    i.onload = async () => {
+                        // If mobile upload, POST to server
+                        if (doUpload) {
+                            const formData = new FormData();
+                            formData.append('image', f);
+                            try {
+                                overlay.classList.add('show');
+                                processingText.textContent = '上传中...';
+                                await fetch(getServerUrl() + '/api/upload', { method: 'POST', body: formData });
+                                processingText.textContent = '上传成功';
+                                setTimeout(() => overlay.classList.remove('show'), 500);
+                            } catch(e) {
+                                overlay.classList.remove('show');
+                                showToast('上传失败');
+                            }
+                        }
+                        // Local preview
+                        const c = document.createElement('canvas');
+                        c.width = i.width; c.height = i.height;
+                        c.getContext('2d').drawImage(i, 0, 0);
+                        const localId = Date.now() + Math.random();
+                        images.push({ id: localId, original: c.toDataURL('image/jpeg', 0.92), processed: null, name: f.name, fromMobile: doUpload });
+                        updateUI();
+                    };
+                    i.src = e.target.result;
+                };
+                r.readAsDataURL(f);
+            }
+        }
+        
+        // Update UI
+        function updateUI() {
+            // Basic page
+            imageGridBasic.innerHTML = '';
+            images.forEach((img, idx) => {
+                const div = document.createElement('div');
+                div.className = 'image-item';
+                div.innerHTML = `
+                    <img src="${img.processed || img.original}" alt="">
+                    ${img.processed ? '<span class="badge">已美化</span>' : ''}
+                    <button class="remove">×</button>
+                `;
+                div.querySelector('.remove').onclick = e => {
+                    e.stopPropagation();
+                    images.splice(idx, 1);
+                    updateUI();
+                };
+                imageGridBasic.appendChild(div);
+            });
+            
+            // AI page
+            imageGridAi.innerHTML = '';
+            images.forEach((img, idx) => {
+                const div = document.createElement('div');
+                div.className = 'image-item' + (idx === selectedIdx ? ' selected' : '');
+                div.innerHTML = `
+                    <img src="${img.processed || img.original}" alt="">
+                    <span class="check">✓</span>
+                    ${img.processed ? '<span class="badge">已修图</span>' : ''}
+                    ${!img.processed ? '<button class="remove">×</button>' : ''}
+                `;
+                div.onclick = () => {
+                    if (img.processed) return;
+                    selectedIdx = idx;
+                    updateUI();
+                };
+                div.querySelector('.remove')?.addEventListener('click', e => {
+                    e.stopPropagation();
+                    images.splice(idx, 1);
+                    if (selectedIdx === idx) selectedIdx = -1;
+                    else if (selectedIdx > idx) selectedIdx--;
+                    updateUI();
+                });
+                imageGridAi.appendChild(div);
+            });
+            
+            // Buttons state
+            const hasImages = images.length > 0;
+            const hasProcessed = images.some(i => i.processed);
+            const hasAiSelection = selectedIdx >= 0 && selectedIdx < images.length && !images[selectedIdx].processed;
+            const hasPrompt = promptInput.value.trim().length > 0;
+            
+            clearBtn.disabled = !hasImages;
+            enhanceBtn.disabled = !hasImages;
+            downloadBtn.disabled = !hasProcessed;
+            
+            clearBtnAi.disabled = !hasImages;
+            aiBtn.disabled = !(hasAiSelection && hasPrompt);
+            downloadBtnAi.disabled = !hasProcessed;
+            
+            totalCount.textContent = images.length;
+            processedCount.textContent = images.filter(i => i.processed).length;
+        }
+        
+        // Enhance (Basic) - client-side canvas processing
+        function applyFilters(imgData, brightness, contrast, saturation, sharpen) {
+            const data = imgData.data;
+            const p = brightness * contrast;
+            const q = 128 * (1 - contrast) + 128 * (1 - brightness) * contrast;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i], g = data[i+1], b = data[i+2];
+                
+                // Brightness + Contrast
+                r = p * r + q;
+                g = p * g + q;
+                b = p * b + q;
+                
+                // Saturation
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                r = gray + saturation * (r - gray);
+                g = gray + saturation * (g - gray);
+                b = gray + saturation * (b - gray);
+                
+                data[i] = Math.max(0, Math.min(255, r));
+                data[i+1] = Math.max(0, Math.min(255, g));
+                data[i+2] = Math.max(0, Math.min(255, b));
+            }
+            
+            // Sharpen (box filter approximation)
+            if (sharpen > 0) {
+                const orig = new Uint8ClampedArray(data);
+                const w = imgData.width;
+                const amount = sharpen * 0.8;
+                for (let i = 0; i < data.length; i += 4) {
+                    const x = (i / 4) % w;
+                    const y = Math.floor((i / 4) / w);
+                    if (x < 1 || y < 1 || x >= w - 1 || y >= imgData.height - 1) continue;
+                    for (let c = 0; c < 3; c++) {
+                        const center = orig[i + c];
+                        const neighbors = (
+                            orig[i - 4 + c] + orig[i + 4 + c] +
+                            orig[i - w * 4 + c] + orig[i + w * 4 + c]
+                        ) / 4;
+                        data[i + c] = Math.max(0, Math.min(255, center + (center - neighbors) * amount));
+                    }
+                }
+            }
+            return imgData;
+        }
+        
+        function processImage(img) {
+            const canvas = document.createElement('canvas');
+            const maxW = 1920;
+            const scale = Math.min(1, maxW / img.width);
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const filtered = applyFilters(imgData, brightness, contrast, saturation, sharpen);
+            ctx.putImageData(filtered, 0, 0);
+            return canvas.toDataURL('image/jpeg', 0.92);
+        }
+        
+        enhanceBtn.onclick = async () => {
+            overlay.classList.add('show');
+            for (let i = 0; i < images.length; i++) {
+                if (images[i].processed) continue;
+                processingText.textContent = `美化中 ${i + 1}/${images.length}`;
+                try {
+                    const img = new Image();
+                    img.src = images[i].original;
+                    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+                    images[i].processed = processImage(img);
+                } catch(e) { console.error(e); }
+                updateUI();
+            }
+            overlay.classList.remove('show');
+            showToast('完成');
+        };
+        
+        // AI Enhance
+        aiBtn.onclick = async () => {
+            if (selectedIdx < 0 || !promptInput.value.trim()) return;
+            overlay.classList.add('show');
+            processingText.textContent = 'AI修图中...';
+            try {
+                const resp = await fetch(getServerUrl() + '/api/ai-enhance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: images[selectedIdx].original,
+                        prompt: promptInput.value.trim()
+                    })
+                });
+                const data = await resp.json();
+                if (data.result) {
+                    images[selectedIdx].processed = data.result;
+                    selectedIdx = -1;
+                    updateUI();
+                    showToast('修图完成');
+                } else {
+                    showToast(data.error || '修图失败');
+                }
+            } catch(e) {
+                showToast('修图失败');
+            }
+            overlay.classList.remove('show');
+        };
+        
+        // Download for AI tab
+        downloadBtnAi.onclick = async () => {
+            const pro = images.filter(i => i.processed);
+            if (pro.length === 1) {
+                const a = document.createElement('a');
+                a.href = pro[0].processed;
+                a.download = 'AI修图_' + (pro[0].name || 'image.jpg');
+                a.click();
+            } else {
+                const zip = new JSZip();
+                pro.forEach((img, i) => zip.file(`AI修图_${i+1}.jpg`, img.processed.split(',')[1], {base64: true}));
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'AI修图.zip';
+                a.click();
+            }
+        };
+        
+        // Clear
+        clearBtn.onclick = clearBtnAi.onclick = () => {
+            if (location.search.includes('mode=upload')) {
+                images = []; // mobile: clear all
+            } else {
+                images = []; // desktop: clear all
+            }
+            selectedIdx = -1;
+            updateUI();
+        };
+        
+        // Prompt input
+        promptInput.oninput = () => {
+            const hasPrompt = promptInput.value.trim().length > 0;
+            const hasAiSelection = selectedIdx >= 0 && selectedIdx < images.length && !images[selectedIdx].processed;
+            aiBtn.disabled = !(hasAiSelection && hasPrompt);
+        };
+        
+        // Init
+        initQR();
+        startPolling();
+        updateUI();
+        
+        // Mobile upload mode
+        if (location.search.includes('mode=upload')) {
+            document.querySelector('.nav').style.display = 'none';
+            document.querySelector('h1').textContent = '上传图片';
+            document.querySelector('.subtitle').textContent = '';
+            document.querySelector('.qr-section').style.display = 'none';
+            document.querySelector('.stats').style.display = 'none';
+            document.querySelector('.params').style.display = 'none';
+            document.getElementById('enhanceBtn').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.querySelector('.prompt-box').style.display = 'none';
+            document.getElementById('addBtn').style.fontSize = '48px';
+        }
+    </script>
+    
+    <!-- AI文案页面 -->
+    <div class="page" id="pageText">
+        <div class="text-gen-container">
+            <div class="text-gen-header">AI文案生成</div>
+            <div class="text-gen-desc">输入房源信息，AI自动生成推广文案</div>
+            
+            <div class="text-gen-form">
+                <input class="text-input" id="communityInput" placeholder="小区名称">
+                <input class="text-input" id="layoutInput" placeholder="户型，如2室1厅">
+                <input class="text-input" id="priceInput" placeholder="价格，如150万">
+                <input class="text-input" id="paymentInput" placeholder="付款方式，如公积金">
+                <input class="text-input" id="locationInput" placeholder="路段或区域，如国贸CBD">
+            </div>
+            <div class="text-gen-row">
+                <select class="text-select" id="styleSelect">
+                    <option value="1">简洁专业型</option>
+                    <option value="2">煽情种草型</option>
+                    <option value="3">接地气型</option>
+                    <option value="4">学区房专用型</option>
+                    <option value="5">投资型</option>
+                    <option value="6">豪宅 luxury 型</option>
+                    <option value="7">刚需上车型</option>
+                    <option value="8">地铁沿线型</option>
+                </select>
+                <button class="btn primary" id="genTextBtn">生成文案</button>
+            </div>
+            
+            <div class="text-result hidden" id="textResult">
+                <textarea class="result-textarea" id="textContent" placeholder="生成的文案将在此显示，可自行修改..."></textarea>
+                <button class="btn copy-btn" id="copyBtn">复制全文</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Text generation
+        const genTextBtn = document.getElementById('genTextBtn');
+        const textResult = document.getElementById('textResult');
+        const textContent = document.getElementById('textContent');
+        const copyBtn = document.getElementById('copyBtn');
+        
+        genTextBtn.onclick = async () => {
+            const community = document.getElementById('communityInput').value.trim();
+            const layout = document.getElementById('layoutInput').value.trim();
+            const price = document.getElementById('priceInput').value.trim();
+            const payment = document.getElementById('paymentInput').value.trim();
+            const location = document.getElementById('locationInput').value.trim();
+            const style = document.getElementById('styleSelect').value;
+            if (!community || !layout || !price || !payment) {
+                showToast('请填写小区、户型、价格、付款方式'); return;
+            }
+            genTextBtn.disabled = true;
+            genTextBtn.textContent = '生成中...';
+            try {
+                const resp = await fetch(getServerUrl() + '/api/generate-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ community, layout, price, payment, location, style })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    textContent.value = data.text;
+                    textResult.classList.remove('hidden');
+                } else {
+                    showToast(data.error || '生成失败');
+                }
+            } catch(e) { showToast('生成失败'); }
+            genTextBtn.disabled = false;
+            genTextBtn.textContent = '生成文案';
+        };
+        
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(textContent.value).then(() => {
+                copyBtn.textContent = '已复制';
+                copyBtn.classList.add('copied');
+                setTimeout(() => { copyBtn.textContent = '复制全文'; copyBtn.classList.remove('copied'); }, 1500);
+            }).catch(() => {});
+        };
+    </script>
+</body>
+</html>

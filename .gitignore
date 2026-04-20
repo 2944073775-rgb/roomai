@@ -1,0 +1,5 @@
+node_modules/
+uploads/
+err*.log
+package-lock.json
+.DS_Store
