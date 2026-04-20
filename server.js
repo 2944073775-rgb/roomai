@@ -9,7 +9,7 @@ const { URL } = require('url');
 const { Jimp, ResizeStrategy } = require('jimp');
 
 // ========== OpenRouter 配置 ==========
-const OPENROUTER_KEY = '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';
+const OPENROUTER_KEY = process.env.OPENROUTER_KEY || '';
 
 // ========== DeepSeek 配置 ==========
 const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY || 'sk-ac712750f2114584b79c0e6c79511ee7';
@@ -434,7 +434,7 @@ const server = http.createServer((req, res) => {
                     const id = Date.now() + Math.random();
                     const filename = id + ext;
                     fs.writeFileSync(path.join(UPLOADS_DIR, filename), part.data);
-                    const imageData = { id, filename, original: `/uploads/${filename}`, name: part.filename, timestamp: Date.now() };
+                    const imageData = { id, filename, original: `/uploads/${filename}`, name: part.filename, timestamp: Date.now(), fromMobile: true };
                     newImages.push(imageData);
                     uploadedImages.push(imageData);
                     console.log('Saved image:', filename);

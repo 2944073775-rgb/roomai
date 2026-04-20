@@ -708,7 +708,7 @@
                     .then(data => {
                         if (data.images && data.images.length > 0) {
                             data.images.forEach(img => {
-                                if (!images.find(i => i.id === img.id)) {
+                                if (!images.find(i => i.name === img.name)) {
                                     const i = new Image();
                                     i.onload = () => {
                                         const c = document.createElement('canvas');
