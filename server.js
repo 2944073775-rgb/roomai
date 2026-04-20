@@ -9,7 +9,7 @@ const { URL } = require('url');
 const { Jimp, ResizeStrategy } = require('jimp');
 
 // ========== OpenRouter 配置 ==========
-const OPENROUTER_KEY = process.env.OPENROUTER_KEY || '';
+const OPENROUTER_KEY = process.env.OPENROUTER_KEY || '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';
 
 // ========== DeepSeek 配置 ==========
 const DEEPSEEK_KEY = process.env.DEEPSEEK_KEY || 'sk-ac712750f2114584b79c0e6c79511ee7';
